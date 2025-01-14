@@ -1,0 +1,84 @@
+# the following script creates a vector from each document using term frequencies of words. 
+import pandas as pd
+from sklearn.feature_extraction.text import CountVectorizer
+text = ['Hello my name is james',
+'james this is my big big python notebook',
+'james trying to create a big dataset',
+'james oh james how are you',
+'features of count vectorizer']
+coun_vect = CountVectorizer()
+count_matrix = coun_vect.fit_transform(text)
+count_array = count_matrix.toarray()
+df = pd.DataFrame(data=count_array,columns = coun_vect.get_feature_names())
+print(df)
+
+
+
+# Here is a script that calculates basic cosine similarity between two documents
+import numpy as np
+from sklearn.metrics.pairwise import cosine_similarity
+from sklearn.feature_extraction.text import CountVectorizer
+import pandas as pd
+# we will calculate the similarity between two documents 
+text1 = 'How should we end violence in the world?'
+text2 = 'What can be done to promote global peace?'
+documents =[text1, text2]
+count_vectorizer = CountVectorizer(stop_words='english')
+sparse_matrix = count_vectorizer.fit_transform(documents)
+doc_term_matrix = sparse_matrix.todense()
+df = pd.DataFrame(doc_term_matrix,
+                  columns=count_vectorizer.get_feature_names_out(),
+                  index=['x', 'y'])
+print("Cosine similarity:", cosine_similarity(df, df)[0,1])
+
+
+
+# Here we calculate the similarity between the same docs using word vectors (spacy)
+# pip install spacy
+# download the medium sized file containing word vectors
+# !python -m spacy download en_core_web_md
+import spacy
+nlp = spacy.load('en_core_web_md')
+text1 = 'How should we end violence in the world?'
+text2 = 'What can be done to promote global peace?'
+doc1 = nlp(text1)
+doc2 = nlp(text2)
+print("spaCy similarity:", doc1.similarity(doc2))
+
+
+
+# The following script accesses the OpenAI API for sentiment analysis
+import csv
+from openai import OpenAI
+# Use your OpenAI key below
+client = OpenAI(api_key="Your_key_here")
+
+def convert_int(s):
+    try:
+        int(s)
+        return True
+    except:
+        return False
+
+def get_sentiment(prompt):
+    is_int = False
+    while not is_int:
+        completion = client.chat.completions.create(
+            model="gpt-3.5-turbo",
+            messages=[
+                {"role": "system", "content": "You are a helpful assistant."},
+                {"role": "user", "content": f"Provide_your_prompt_to_obtain_sentiment_scores_here: '{prompt}'"}
+            ]
+        )
+        sentiment = completion.choices[0].message.content
+        if convert_int(sentiment):
+            is_int = True
+    return sentiment
+
+# prompts.csv is a single column data file that cintains a post in each row.
+with open("prompts.csv", mode='r') as csv_file:
+    csv_reader = csv.reader(csv_file)
+    for row in csv_reader:
+        prompt = row[0]
+        sentiment = get_sentiment(prompt)
+        print(f"Prompt: {prompt}, Sentiment Confidence: {sentiment}")
